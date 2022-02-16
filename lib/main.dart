@@ -45,110 +45,150 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  double? dolar;
-  double? euro;
+  TextEditingController realController = TextEditingController();
+  TextEditingController dolarController = TextEditingController();
+  TextEditingController euroController = TextEditingController();
+
+  late double dolar;
+  late double euro;
+
+  void _handleRealChange(String value) {
+    if (value.isEmpty || value.startsWith(',')) {
+      resetForm();
+      return;
+    }
+    double real = double.parse(value.replaceFirst(',', '.'));
+    dolarController.text = (real / dolar).toStringAsFixed(2);
+    euroController.text = (real / euro).toStringAsFixed(2);
+  }
+
+  void _handleDolarChange(String value) {
+    if (value.isEmpty || value.startsWith(',')) {
+      resetForm();
+      return;
+    }
+    double dolar = double.parse(value.replaceFirst(',', '.'));
+    realController.text = (dolar * this.dolar).toStringAsFixed(2);
+    euroController.text = (dolar * this.dolar / euro).toStringAsFixed(2);
+  }
+
+  void _handleEuroChange(String value) {
+    if (value.isEmpty || value.startsWith(',')) {
+      resetForm();
+      return;
+    }
+    double euro = double.parse(value.replaceFirst(',', '.'));
+    realController.text = (euro * this.euro).toStringAsFixed(2);
+    dolarController.text = (euro * this.euro / dolar).toStringAsFixed(2);
+  }
+
+  void resetForm() {
+    realController.clear();
+    dolarController.clear();
+    euroController.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.orange,
-        title: const Text('\$ Conversor de Moedas'),
-        centerTitle: true,
-      ),
-      body: FutureBuilder<Map>(
-        future: getCurrencies(),
-        builder: (context, snapshot) {
-          switch (snapshot.connectionState) {
-            case ConnectionState.none:
-            case ConnectionState.waiting:
-              return const Center(
-                child: Text(
-                  'Carregando...',
-                  style: TextStyle(
-                    fontSize: 20,
-                    color: Colors.orange,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              );
-            default:
-              if (snapshot.hasError) {
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.orange,
+          title: const Text('\$ Conversor de Moedas'),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: resetForm,
+            ),
+          ],
+        ),
+        body: FutureBuilder<Map>(
+          future: getCurrencies(),
+          builder: (context, snapshot) {
+            switch (snapshot.connectionState) {
+              case ConnectionState.none:
+              case ConnectionState.waiting:
                 return const Center(
                   child: Text(
-                    'Erro ao carregar os dados',
+                    'Carregando...',
                     style: TextStyle(
                       fontSize: 20,
-                      color: Colors.red,
+                      color: Colors.orange,
                     ),
                     textAlign: TextAlign.center,
                   ),
                 );
-              } else {
-                dolar = snapshot.data?['results']['currencies']['USD']['buy'];
-                euro = snapshot.data?['results']['currencies']['EUR']['buy'];
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: const [
-                      Icon(
-                        Icons.monetization_on,
-                        size: 150,
-                        color: Colors.orange,
+              default:
+                if (snapshot.hasError) {
+                  return const Center(
+                    child: Text(
+                      'Erro ao carregar os dados',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.red,
                       ),
-                      TextField(
-                        decoration: InputDecoration(
-                          labelText: 'Real',
-                          labelStyle: TextStyle(
-                            color: Colors.orange,
-                          ),
-                          border: OutlineInputBorder(),
-                          prefixText: 'R\$',
-                        ),
-                        style: TextStyle(
+                      textAlign: TextAlign.center,
+                    ),
+                  );
+                } else {
+                  dolar = snapshot.data?['results']['currencies']['USD']['buy'];
+                  euro = snapshot.data?['results']['currencies']['EUR']['buy'];
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Icon(
+                          Icons.monetization_on,
+                          size: 150,
                           color: Colors.orange,
-                          fontSize: 25,
                         ),
-                      ),
-                      Divider(),
-                      TextField(
-                        decoration: InputDecoration(
-                          labelText: 'Dólar',
-                          labelStyle: TextStyle(
-                            color: Colors.orange,
-                          ),
-                          border: OutlineInputBorder(),
-                          prefixText: '\$',
-                        ),
-                        style: TextStyle(
-                          color: Colors.orange,
-                          fontSize: 25,
-                        ),
-                      ),
-                      Divider(),
-                      TextField(
-                        decoration: InputDecoration(
-                          labelText: 'Euro',
-                          labelStyle: TextStyle(
-                            color: Colors.orange,
-                          ),
-                          border: OutlineInputBorder(),
-                          prefixText: '€',
-                        ),
-                        style: TextStyle(
-                          color: Colors.orange,
-                          fontSize: 25,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-          }
-        },
+                        customTextField(
+                            'Real', 'R\$', realController, _handleRealChange),
+                        const Divider(),
+                        customTextField(
+                            'Dólar', '\$', dolarController, _handleDolarChange),
+                        const Divider(),
+                        customTextField(
+                            'Euro', '€', euroController, _handleEuroChange),
+                      ],
+                    ),
+                  );
+                }
+            }
+          },
+        ),
       ),
     );
   }
+}
+
+Widget customTextField(
+  String label,
+  String prefix,
+  TextEditingController controller,
+  Function onChange,
+) {
+  return TextField(
+    controller: controller,
+    onChanged: (value) {
+      onChange(value);
+    },
+    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+    decoration: InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(
+        color: Colors.orange,
+      ),
+      border: const OutlineInputBorder(),
+      prefixText: prefix,
+    ),
+    style: const TextStyle(
+      color: Colors.orange,
+      fontSize: 25,
+    ),
+  );
 }
