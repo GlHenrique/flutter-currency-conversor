@@ -3,17 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-// theme: ThemeData(
-//       hintColor: Colors.amber,
-//       primaryColor: Colors.white,
-//       inputDecorationTheme: InputDecorationTheme(
-//         enabledBorder:
-//             OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
-//         focusedBorder:
-//             OutlineInputBorder(borderSide: BorderSide(color: Colors.amber)),
-//         hintStyle: TextStyle(color: Colors.amber),
-//       )),
-
 const hgBrasilKey = 'https://api.hgbrasil.com/finance?key=f5ddbcd6';
 
 Future<Map> getCurrencies() async {
@@ -179,7 +168,7 @@ Widget customTextField(
       onChange(value);
     },
     inputFormatters: <TextInputFormatter>[
-      FilteringTextInputFormatter.allow(RegExp(r'(^\-?\d*\.|,?\d*)')),
+      FilteringTextInputFormatter.allow(RegExp(r'(^\-?\d*(\.|,)?\d*)')),
     ],
     keyboardType: const TextInputType.numberWithOptions(decimal: true),
     decoration: InputDecoration(
